@@ -1,0 +1,205 @@
+/*
+* Constants
+*/
+
+interface FIZZSDKConstants {
+	static readonly attribute long ROOM_NAME_MIN_LENGTH;
+	static readonly attribute long ROOM_NAME_MAX_LENGTH;
+};
+
+/*
+* Defines
+*/
+
+enum FIZZRoomType {
+    "RoomTypeDefault",
+    "RoomTypeUserRoom"
+};
+
+enum FIZZActionType {
+    "ActionTypeChatMessage",
+    "ActionTypeNotification"
+};
+
+enum FIZZErrorCode {
+    "ErrorCodeInvalidParam",
+    "ErrorCodeInvalidOperation",
+    "ErrorCodeServerRequestFailed"
+};
+
+/*
+* IFIZZObject
+*/
+
+interface IFIZZObject {
+    DOMString getObjectId();
+};
+
+/*
+* IFIZZAction
+*/
+
+interface IFIZZAction : IFIZZObject {
+    DOMString getRoomId();
+    virtual FIZZActionType getType();
+    DOMString getContent();
+    DOMString getActionId();
+};
+
+/*
+* IFIZZAction
+*/
+
+interface IFIZZChatMessageAction : IFIZZAction {
+	DOMString getUserId();
+};
+
+/*
+* IFIZZError
+*/
+
+interface IFIZZError : IFIZZObject {
+	FIZZErrorCode getErrorCode();
+    DOMString getErrorDescription();
+};
+
+/*
+* IFIZZUser
+*/
+
+interface IFIZZUser : IFIZZObject {
+    DOMString getName();
+    DOMString getUserId();
+};
+
+/*
+* IFIZZRoom
+*/
+
+interface IFIZZRoom : IFIZZObject {
+    DOMString getName();
+    FIZZRoomType getType();
+    DOMString getRoomId();
+    IFIZZUser getOwner();
+};
+
+/*
+* IFIZZRoom
+*/
+
+interface IFIZZRequest : IFIZZObject {
+    IFIZZError getError();
+};
+
+/*
+* IFIZZRoomRequest
+*/
+
+interface IFIZZRoomRequest : IFIZZRequest {
+    DOMString getRoomId();
+};
+
+/*
+* IFIZZRoomUpdateNameRequest
+*/
+
+interface IFIZZRoomUpdateNameRequest : IFIZZRoomRequest {
+    DOMString getUpdatedName();
+};
+
+/*
+* IFIZZRoomUpdateTypeRequest
+*/
+
+interface IFIZZRoomUpdateTypeRequest : IFIZZRoomRequest {
+	FIZZRoomType getUpdateType();
+};
+
+/*
+* IFIZZRoomFetchActionHistoryRequest
+*/
+
+interface IFIZZRoomFetchActionHistoryRequest : IFIZZRoomRequest {
+};
+
+/*
+* IFIZZRoomAddMemberRequest
+*/
+
+interface IFIZZRoomAddMemberRequest : IFIZZRoomRequest {
+    IFIZZUser getAddedUser();
+};
+
+/*
+* IFIZZActionRequest
+*/
+
+interface IFIZZActionRequest : IFIZZRoomRequest {
+    IFIZZAction getAction();
+};
+
+/*
+* Iterables
+*/
+
+interface StringIterable {
+  	iterable<DOMString>;
+  	getter DOMString(unsigned long index);
+ 	readonly attribute unsigned long length;
+};
+
+interface IFIZZActionIterable {
+	iterable<IFIZZAction>;
+ 	getter IFIZZAction(unsigned long index);
+  	readonly attribute unsigned long length;	
+};
+
+interface IFIZZUserIterable {
+	iterable<IFIZZUser>;
+ 	getter IFIZZUser(unsigned long index);
+  	readonly attribute unsigned long length;	
+};
+
+/*
+* Callback
+*/
+
+callback FIZZErrorAck = void (IFIZZError);
+
+/*
+* IFIZZRooms
+*/
+
+interface IFIZZRooms {
+    StringIterable getRoomIds();
+    IFIZZRoom getRoom(DOMString roomId);
+    
+    void createRoomUpdateNameRequest(DOMString roomId, DOMString updatedName, [Ref] IFIZZRoomUpdateNameRequest request);
+    void processUpdatedRoomNameRequest(IFIZZRoomUpdateNameRequest request, FIZZErrorAck ack);
+    
+    void createRoomUpdateTypeRequest(DOMString roomId, FIZZRoomType updatedTpye, [Ref] IFIZZRoomUpdateTypeRequest request);
+    void processUpdatedRoomTypeRequest(IFIZZRoomUpdateTypeRequest request, FIZZErrorAck ack);
+    
+    IFIZZActionIterable getActionList(DOMString roomId);
+    void createFetchRoomActionHistoryRequest(DOMString roomId, [Ref] IFIZZRoomFetchActionHistoryRequest request);
+    void processFetchRoomActionHistoryRequest(IFIZZRoomFetchActionHistoryRequest request, FIZZErrorAck ack);
+    
+    IFIZZUserIterable getMembersList(DOMString roomId);
+    void createRoomAddMemberRequest(DOMString roomId, IFIZZUser user, [Ref] IFIZZRoomAddMemberRequest request);
+    void processRoomAddMemberRequest(IFIZZRoomAddMemberRequest request, FIZZErrorAck ack);
+    
+    void createChatMessageActionRequest(DOMString roomId, DOMString msg, [Ref] IFIZZActionRequest request, [Ref] IFIZZChatMessageAction action);
+    void processActionRequest(IFIZZActionRequest request, FIZZErrorAck ack);
+};
+
+/*
+* FIZZSDK
+*/
+
+interface FIZZSDK {
+	static FIZZSDK getInstance ();
+	void initialize(DOMString token, DOMString url, FIZZErrorAck ack);
+    void shutdown();
+    void update();
+    [Ref] IFIZZRooms rooms();
+};
